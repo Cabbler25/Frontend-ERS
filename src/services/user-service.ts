@@ -2,7 +2,7 @@ import User from "../models/User";
 import db from "../util/pg-connection";
 import { logQuery } from "../util/utils";
 
-const bcrypt = require('bcrypt-nodejs');
+const bcrypt = require('bcrypt');
 const saltRounds: number = 12;
 
 // TODO: implement
