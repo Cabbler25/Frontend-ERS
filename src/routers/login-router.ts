@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import * as loginService from '../services/login-service';
 
 // 5 minute timeout
-// test
 const loginRouter = express.Router();
 const bcrypt = require('bcryptjs');
 const err: string = 'Invalid Credentials';

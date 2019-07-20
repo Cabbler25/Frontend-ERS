@@ -2,9 +2,9 @@ import { roles } from "../models/Role";
 import { Pool } from 'pg';
 
 const db = new Pool({
-    host: 'localhost',
+    host: process.env.PROJECT_URL,
     database: 'postgres',
-    user: process.env.PROJECT_NAME,
+    user: process.env.PROJECT_USER,
     password: process.env.PROJECT_PASSWORD,
     port: 5432,
 });
