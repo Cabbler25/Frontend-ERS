@@ -8,16 +8,16 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import { Divider, DialogContentText } from '@material-ui/core';
 import Cookies from 'js-cookie';
 
-export default class ChangePasswordForm extends React.Component<any, any> {
+export default class CreateReimbursementForm extends React.Component<any, any> {
   userCookie = Cookies.getJSON('user');
   constructor(props: any) {
     super(props);
     this.state = {
       open: this.props.open,
-      id: this.props.userId,
       successPromptOpen: false,
-      errorPwField: false,
-      errorConfirmField: false,
+      id: this.props.userId,
+      matching: true,
+      passwordMissing: false,
       password: '',
       passwordConfirm: '',
       errorPwTxt: '',
@@ -40,9 +40,10 @@ export default class ChangePasswordForm extends React.Component<any, any> {
                 this.handleSubmit(e);
               }
             }}>
-              {this.getPwField()}
+              {this.state.passwordMissing ? this.getErrorPwField() : this.getNormalPwField()}
+              {/* <Button><img className="center" src={hidePwIco} /></Button> */}
               <br />
-              {this.getConfirmField()}
+              {this.state.matching ? this.getNormalConfirmField() : this.getErrorConfirmField()}
             </div>
           </DialogContent>
           <DialogActions>
@@ -84,34 +85,40 @@ export default class ChangePasswordForm extends React.Component<any, any> {
   handleClose() {
     this.setState({
       open: false,
-      errorPwField: false,
-      errorConfirmField: false
+      matching: true,
+      passwordMissing: false,
+      errorPwTxt: '',
+      errorConfirmTxt: ''
     })
   }
 
   handleInputChange(event: any) {
     this.setState({
       [event.target.id]: event.target.value,
-      errorPwField: false,
-      errorConfirmField: false
+      matching: true,
+      passwordMissing: false,
+      errorPwTxt: '',
+      errorConfirmTxt: ''
     });
   }
 
   handleSubmit(event: any) {
+    // event.preventDefault();
     const data = this.state;
-    const errorPw = data.password === '';
-    const errorConfirm = data.password != data.passwordConfirm;
-    if (errorPw || errorConfirm) {
+    if (data.password === '') {
       this.setState({
-        errorPwField: errorPw,
-        errorConfirmField: errorConfirm
+        passwordMissing: true,
+        errorPwTxt: 'Missing field'
+      })
+    } else if (data.password != data.passwordConfirm) {
+      this.setState({
+        matching: false,
+        errorConfirmTxt: 'Not matching'
       })
     } else {
       this.updatePassword();
       this.setState({
-        successPromptOpen: true,
-        errorPwField: false,
-        errorConfirmField: false
+        successPromptOpen: true
       })
       this.handleClose();
     }
@@ -153,51 +160,52 @@ export default class ChangePasswordForm extends React.Component<any, any> {
     }
   }
 
-  getPwField = () => {
-    return (
-      !this.state.errorPwField ?
-        <TextField
-          variant="outlined"
-          onChange={(event) => this.handleInputChange(event)
-          }
-          margin="dense"
-          id="password"
-          label="New password"
-          type="password" />
-        :
-        <TextField
-          error
-          variant="outlined"
-          onChange={(event) => this.handleInputChange(event)}
-          margin="dense"
-          id="password"
-          label="New password"
-          type="password"
-          helperText={this.state.errorPwTxt} />
-    );
+  getNormalPwField = () => {
+    return <TextField
+      variant="outlined"
+      onChange={(event) => this.handleInputChange(event)}
+      margin="dense"
+      id="password"
+      label="New password"
+      type="password"
+    />
   }
 
-  getConfirmField = () => {
-    return (
-      !this.state.errorConfirmField ?
-        <TextField
-          variant="outlined"
-          onChange={(event) => this.handleInputChange(event)}
-          margin="dense"
-          id="passwordConfirm"
-          label="Confirm password "
-          type="password" />
-        :
-        <TextField
-          error
-          variant="outlined"
-          onChange={(event) => this.handleInputChange(event)}
-          margin="dense"
-          id="passwordConfirm"
-          label="Confirm password "
-          type="password"
-          helperText={this.state.errorConfirmTxt}
-        />
-    );
+  getErrorPwField = () => {
+    return <TextField
+      error
+      variant="outlined"
+      onChange={(event) => this.handleInputChange(event)}
+      margin="dense"
+      id="password"
+      label="New password"
+      type="password"
+      helperText={this.state.missinedPwTxt}
+    />
+  }
+
+  getNormalConfirmField = () => {
+    return <TextField
+      variant="outlined"
+      onChange={(event) => this.handleInputChange(event)}
+      margin="dense"
+      id="passwordConfirm"
+      label="Confirm password "
+      type="password"
+      helperText={this.state.notMatchingTxt}
+    />
+  }
+
+  getErrorConfirmField = () => {
+    return <TextField
+      error
+      variant="outlined"
+      onChange={(event) => this.handleInputChange(event)}
+      margin="dense"
+      id="passwordConfirm"
+      label="Confirm password "
+      type="password"
+      helperText={this.state.txt}
+    />
   }
 }

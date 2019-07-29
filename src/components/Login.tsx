@@ -1,12 +1,19 @@
 import * as React from 'react';
-import { Formik, Form, Field, FieldProps } from 'formik';
-import { Button, TextField } from '@material-ui/core';
+import { Button, TextField, Container, Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
 import Cookies from 'js-cookie';
 import { Redirect } from 'react-router';
-import { inFiveMinutes, parseUserCookie } from '../utils/SessionCookies';
-import { TextFieldProps } from 'material-ui';
+import { ParseUserCookie } from '../utils/SessionCookies';
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      padding: theme.spacing(3, 2),
+    },
+  }),
+);
 
 export default class LoginForm extends React.Component<any, any> {
+  // classes = useStyles();
   constructor(props: any) {
     super(props);
     this.state = {
@@ -19,6 +26,33 @@ export default class LoginForm extends React.Component<any, any> {
     }
   }
 
+  render() {
+    return (
+      <div style={{ textAlign: "center", paddingTop: "100px" }}>
+        {ParseUserCookie() ? <Redirect push to="/user" /> :
+          <div>
+            <Paper style={{ display: 'inline-block', padding: '40px' }}>
+              <h2>Welcome</h2>
+              <div onKeyPress={(e: any) => {
+                if (e.key === 'Enter') {
+                  this.handleSubmit();
+                }
+              }}>
+                {this.getUsernameField()}
+                <div style={{ marginTop: '-11.5px' }}><br /></div>
+                {this.getPwField()}
+              </div>
+              <br />
+              <Button style={{ marginTop: '-5px' }} onClick={() => this.handleSubmit()} color="inherit">
+                Login
+              </Button>
+            </Paper>
+          </div>
+        }
+      </div>
+    );
+  }
+
   handleInputChange(event: any) {
     this.setState({
       [event.target.id]: event.target.value,
@@ -27,7 +61,7 @@ export default class LoginForm extends React.Component<any, any> {
     });
   }
 
-  handleSubmit(event: any) {
+  handleSubmit() {
     // event.preventDefault();
     const data = this.state;
     if (data.username === '') {
@@ -70,13 +104,8 @@ export default class LoginForm extends React.Component<any, any> {
               return Object.assign(res, { [key]: val })
             }
           }, {});
-        delete data.password;
-        Cookies.set('user', cookies.user, {
-          expires: inFiveMinutes
-        });
-        Cookies.set('permissions', cookies.permissions, {
-          expires: inFiveMinutes
-        });
+        Cookies.set('user', cookies.user);
+        Cookies.set('permissions', cookies.permissions);
         this.props.history.push("/user");
       } else throw err
     } catch (err) {
@@ -89,71 +118,49 @@ export default class LoginForm extends React.Component<any, any> {
     }
   }
 
-  render() {
+
+  // {this.state.usrnameError ? this.getErrorUsernameField() : this.getUsernameField()}
+  // {this.state.pwError ? this.getErrorPwField() : this.getPwField()}
+
+  getUsernameField() {
     return (
-      <div style={{ textAlign: "center", paddingTop: "100px" }}>
-        {parseUserCookie() ? <Redirect to="/user" /> :
-          <div>
-            <h2 style={{ marginTop: '-15px', marginBottom: '30px' }}>Welcome</h2>
-            <div onKeyPress={(e: any) => {
-              if (e.key === 'Enter') {
-                this.handleSubmit(e);
-              }
-            }}>
-              {this.state.usrnameError ? this.getErrorUsernameField() : this.getUsernameField()}
-              <div style={{ marginTop: '-11.5px' }}><br /></div>
-              {this.state.pwError ? this.getErrorPwField() : this.getPwField()}
-            </div>
-            <br />
-            <Button style={{ marginTop: '-5px' }} onClick={(event) => this.handleSubmit(event)} color="inherit">
-              Login
-            </Button>
-          </div>
-        }
-      </div>
+      !this.state.usrnameError ?
+        <TextField
+          id="username"
+          onChange={(e: any) => this.handleInputChange(e)}
+          variant="outlined"
+          placeholder='username'
+        /> :
+        <TextField
+          error
+          id="username"
+          onChange={(e: any) => this.handleInputChange(e)}
+          variant="outlined"
+          placeholder='username'
+          helperText={this.state.errorUsernameFieldTxt}
+        />
     );
   }
 
-  getUsernameField() {
-    return <TextField
-      id="username"
-      onChange={(e: any) => this.handleInputChange(e)}
-      variant="outlined"
-      placeholder='username'
-    />;
-  }
-
-  getErrorUsernameField() {
-    return <TextField
-      error
-      id="username"
-      onChange={(e: any) => this.handleInputChange(e)}
-      variant="outlined"
-      placeholder='username'
-      helperText={this.state.errorUsernameFieldTxt}
-    />;
-  }
-
   getPwField() {
-    return <TextField
-      id="password"
-      onChange={(e: any) => this.handleInputChange(e)}
-      type="password"
-      variant="outlined"
-      placeholder='password'
-    />;
-  }
-
-  getErrorPwField() {
-    return <TextField
-      error
-      id="password"
-      onChange={(e: any) => this.handleInputChange(e)}
-      type="password"
-      variant="outlined"
-      placeholder='password'
-      helperText={this.state.errorPwFieldTxt}
-    />;
+    return (
+      !this.state.pwError ?
+        <TextField
+          id="password"
+          onChange={(e: any) => this.handleInputChange(e)}
+          type="password"
+          variant="outlined"
+          placeholder='password' />
+        :
+        <TextField
+          error
+          id="password"
+          onChange={(e: any) => this.handleInputChange(e)}
+          type="password"
+          variant="outlined"
+          placeholder='password'
+          helperText={this.state.errorPwFieldTxt} />
+    );
   }
 }
 
