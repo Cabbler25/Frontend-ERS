@@ -3,7 +3,7 @@ import MaterialTable from 'material-table';
 import { Button, Theme, makeStyles, createStyles } from '@material-ui/core';
 import RefreshCookies, { ParsePermissionCookie, ParseUserCookie, UpdateCookies, HasPermissions } from '../utils/SessionCookies';
 import { Redirect } from 'react-router';
-import ChangePasswordForm from './ChangePasswordForm';
+import ChangePasswordForm from '../forms/ChangePasswordForm';
 
 export default class Users extends React.Component<any, any> {
   classes = () => {
@@ -81,8 +81,8 @@ export default class Users extends React.Component<any, any> {
       if (!response.ok) {
         throw Error(response.statusText);
       }
-      const data = await response.json();
-      this.setState({ ...this.state, data });
+      const result = await response.json();
+      this.setState({ ...this.state, data: result });
     } catch (err) {
       console.log(err);
       if (err.message == 'Unauthorized') {
@@ -107,6 +107,7 @@ export default class Users extends React.Component<any, any> {
   }
 
   async updateUser(newData: any, oldData: any): Promise<any> {
+    console.log('called')
     try {
       const response = await fetch(`/users`, {
         method: 'PATCH',

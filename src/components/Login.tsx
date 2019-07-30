@@ -1,19 +1,18 @@
 import * as React from 'react';
-import { Button, TextField, Container, Paper, makeStyles, Theme, createStyles } from '@material-ui/core';
+import { Button, TextField, Paper } from '@material-ui/core';
 import Cookies from 'js-cookie';
 import { Redirect } from 'react-router';
 import { ParseUserCookie } from '../utils/SessionCookies';
+import { IUserState, IState } from '../utils';
+import { connect } from "react-redux";
+import { updateUserSession } from '../utils/actions';
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      padding: theme.spacing(3, 2),
-    },
-  }),
-);
-
-export default class LoginForm extends React.Component<any, any> {
-  // classes = useStyles();
+interface IUserProps {
+  user: IUserState,
+  updateUserSession: (v: boolean, n: string) => void,
+  history: any
+}
+export class Login extends React.Component<IUserProps, any> {
   constructor(props: any) {
     super(props);
     this.state = {
@@ -106,6 +105,7 @@ export default class LoginForm extends React.Component<any, any> {
           }, {});
         Cookies.set('user', cookies.user);
         Cookies.set('permissions', cookies.permissions);
+        this.props.updateUserSession(true, ParseUserCookie().firstName);
         this.props.history.push("/user");
       } else throw err
     } catch (err) {
@@ -117,10 +117,6 @@ export default class LoginForm extends React.Component<any, any> {
       });
     }
   }
-
-
-  // {this.state.usrnameError ? this.getErrorUsernameField() : this.getUsernameField()}
-  // {this.state.pwError ? this.getErrorPwField() : this.getPwField()}
 
   getUsernameField() {
     return (
@@ -162,6 +158,23 @@ export default class LoginForm extends React.Component<any, any> {
           helperText={this.state.errorPwFieldTxt} />
     );
   }
+
 }
+
+// This function will convert state-store values to
+// component properties
+const mapStateToProps = (state: IState) => {
+  return {
+    user: state.user
+  }
+}
+
+// This object definition will be used to map action creators to
+// properties
+const mapDispatchToProps = {
+  updateUserSession: updateUserSession 
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Login);
 
 

@@ -8,16 +8,16 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import { Divider, DialogContentText } from '@material-ui/core';
 import Cookies from 'js-cookie';
 
-export default class CreateReimbursementForm extends React.Component<any, any> {
+export default class ChangePasswordForm extends React.Component<any, any> {
   userCookie = Cookies.getJSON('user');
   constructor(props: any) {
     super(props);
     this.state = {
       open: this.props.open,
-      successPromptOpen: false,
       id: this.props.userId,
-      matching: true,
-      passwordMissing: false,
+      successPromptOpen: false,
+      errorPwField: false,
+      errorConfirmField: false,
       password: '',
       passwordConfirm: '',
       errorPwTxt: '',
@@ -40,10 +40,9 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
                 this.handleSubmit(e);
               }
             }}>
-              {this.state.passwordMissing ? this.getErrorPwField() : this.getNormalPwField()}
-              {/* <Button><img className="center" src={hidePwIco} /></Button> */}
+              {this.getPwField()}
               <br />
-              {this.state.matching ? this.getNormalConfirmField() : this.getErrorConfirmField()}
+              {this.getConfirmField()}
             </div>
           </DialogContent>
           <DialogActions>
@@ -63,7 +62,7 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
           <DialogTitle id="alert-dialog-title">{"Success!"}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              Your password has been updated.
+              Password updated.
           </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -85,40 +84,34 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
   handleClose() {
     this.setState({
       open: false,
-      matching: true,
-      passwordMissing: false,
-      errorPwTxt: '',
-      errorConfirmTxt: ''
+      errorPwField: false,
+      errorConfirmField: false
     })
   }
 
   handleInputChange(event: any) {
     this.setState({
       [event.target.id]: event.target.value,
-      matching: true,
-      passwordMissing: false,
-      errorPwTxt: '',
-      errorConfirmTxt: ''
+      errorPwField: false,
+      errorConfirmField: false
     });
   }
 
   handleSubmit(event: any) {
-    // event.preventDefault();
     const data = this.state;
-    if (data.password === '') {
+    const errorPw = data.password === '';
+    const errorConfirm = data.password != data.passwordConfirm;
+    if (errorPw || errorConfirm) {
       this.setState({
-        passwordMissing: true,
-        errorPwTxt: 'Missing field'
-      })
-    } else if (data.password != data.passwordConfirm) {
-      this.setState({
-        matching: false,
-        errorConfirmTxt: 'Not matching'
+        errorPwField: errorPw,
+        errorConfirmField: errorConfirm
       })
     } else {
       this.updatePassword();
       this.setState({
-        successPromptOpen: true
+        successPromptOpen: true,
+        errorPwField: false,
+        errorConfirmField: false
       })
       this.handleClose();
     }
@@ -160,52 +153,51 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
     }
   }
 
-  getNormalPwField = () => {
-    return <TextField
-      variant="outlined"
-      onChange={(event) => this.handleInputChange(event)}
-      margin="dense"
-      id="password"
-      label="New password"
-      type="password"
-    />
+  getPwField = () => {
+    return (
+      !this.state.errorPwField ?
+        <TextField
+          variant="outlined"
+          onChange={(event) => this.handleInputChange(event)
+          }
+          margin="dense"
+          id="password"
+          label="New password"
+          type="password" />
+        :
+        <TextField
+          error
+          variant="outlined"
+          onChange={(event) => this.handleInputChange(event)}
+          margin="dense"
+          id="password"
+          label="New password"
+          type="password"
+          helperText={this.state.errorPwTxt} />
+    );
   }
 
-  getErrorPwField = () => {
-    return <TextField
-      error
-      variant="outlined"
-      onChange={(event) => this.handleInputChange(event)}
-      margin="dense"
-      id="password"
-      label="New password"
-      type="password"
-      helperText={this.state.missinedPwTxt}
-    />
-  }
-
-  getNormalConfirmField = () => {
-    return <TextField
-      variant="outlined"
-      onChange={(event) => this.handleInputChange(event)}
-      margin="dense"
-      id="passwordConfirm"
-      label="Confirm password "
-      type="password"
-      helperText={this.state.notMatchingTxt}
-    />
-  }
-
-  getErrorConfirmField = () => {
-    return <TextField
-      error
-      variant="outlined"
-      onChange={(event) => this.handleInputChange(event)}
-      margin="dense"
-      id="passwordConfirm"
-      label="Confirm password "
-      type="password"
-      helperText={this.state.txt}
-    />
+  getConfirmField = () => {
+    return (
+      !this.state.errorConfirmField ?
+        <TextField
+          variant="outlined"
+          onChange={(event) => this.handleInputChange(event)}
+          margin="dense"
+          id="passwordConfirm"
+          label="Confirm password "
+          type="password" />
+        :
+        <TextField
+          error
+          variant="outlined"
+          onChange={(event) => this.handleInputChange(event)}
+          margin="dense"
+          id="passwordConfirm"
+          label="Confirm password "
+          type="password"
+          helperText={this.state.errorConfirmTxt}
+        />
+    );
   }
 }

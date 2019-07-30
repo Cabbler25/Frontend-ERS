@@ -1,12 +1,11 @@
 import React from 'react';
-import Cookies from 'js-cookie';
 import RefreshCookies, { ParseUserCookie } from '../utils/SessionCookies';
 import { Button, List, ListItem, ListItemText, Divider, Paper } from '@material-ui/core';
 import userIco from '../assets/icons/user-large.png';
 import { Redirect } from 'react-router';
-import ChangePasswordForm from './ChangePasswordForm';
+import ChangePasswordForm from '../forms/ChangePasswordForm';
 
-export default class User extends React.Component<any, any> {
+export class User extends React.Component<any, any> {
   user = ParseUserCookie();
   constructor(props: any) {
     super(props);
@@ -63,8 +62,6 @@ export default class User extends React.Component<any, any> {
                 <Button color="inherit" onClick={() => this.handleClickOpen()}>
                   Change Password</Button><br />
                 <Button color="inherit" onClick={() => {
-                  Cookies.remove('user');
-                  Cookies.remove('permissions');
                   this.props.history.push("/logout");
                 }}>Logout</Button>
               </div>
@@ -79,3 +76,5 @@ export default class User extends React.Component<any, any> {
     return id == 1 ? 'Admin' : id == 2 ? 'Manager' : 'User';
   }
 }
+
+export default User;
