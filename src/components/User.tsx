@@ -15,13 +15,6 @@ export class User extends React.Component<any, any> {
     }
   }
 
-  handleClickOpen() {
-    this.setState({
-      open: true,
-      userId: ParseUserCookie().id
-    });
-  }
-
   render() {
     const dividerFullWidth = {
       marginLeft: '0.5px'
@@ -32,8 +25,7 @@ export class User extends React.Component<any, any> {
         {!this.user ? <Redirect push to="/login" /> :
           <div>
             <Paper style={{ display: 'inline-block', padding: '40px' }}>
-
-              <ChangePasswordForm open={this.state.open} userId={this.state.userId} />
+              <ChangePasswordForm closeParent={() => this.handleClose()} open={this.state.open} userId={this.state.userId} />
               <div>
                 <img className="center" src={userIco} alt="Logo" />
               </div>
@@ -72,8 +64,21 @@ export class User extends React.Component<any, any> {
     )
   }
 
+  handleClickOpen() {
+    this.setState({
+      open: true,
+      userId: ParseUserCookie().id
+    });
+  }
+
+  handleClose() {
+    this.setState({
+      open: false
+    })
+  }
+
   getRole(id: number) {
-    return id == 1 ? 'Admin' : id == 2 ? 'Manager' : 'User';
+    return id === 1 ? 'Admin' : id === 2 ? 'Finance Manager' : 'User';
   }
 }
 

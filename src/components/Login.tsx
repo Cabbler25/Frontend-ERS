@@ -12,6 +12,7 @@ interface IUserProps {
   updateUserSession: (v: boolean, n: string) => void,
   history: any
 }
+
 export class Login extends React.Component<IUserProps, any> {
   constructor(props: any) {
     super(props);
@@ -33,7 +34,7 @@ export class Login extends React.Component<IUserProps, any> {
             <Paper style={{ display: 'inline-block', padding: '40px' }}>
               <h2>Welcome</h2>
               <div onKeyPress={(e: any) => {
-                if (e.key === 'Enter') {
+                if (e.key == 'Enter') {
                   this.handleSubmit();
                 }
               }}>
@@ -63,19 +64,19 @@ export class Login extends React.Component<IUserProps, any> {
   handleSubmit() {
     // event.preventDefault();
     const data = this.state;
-    if (data.username === '') {
+    if (data.username == '') {
       this.setState({
         usrnameError: true,
         errorUsernameFieldTxt: 'Missing field'
       });
     }
-    if (data.password === '') {
+    if (data.password == '') {
       this.setState({
         pwError: true,
         errorPwFieldTxt: 'Missing field'
       });
     }
-    if ((data.username != '') && (data.password != '')) this.logIn();
+    if ((data.username !== '') && (data.password !== '')) this.logIn();
   }
 
   async logIn(): Promise<any> {
@@ -92,7 +93,7 @@ export class Login extends React.Component<IUserProps, any> {
       })
       const data = await response.json();
       const err = 'Invalid Credentials';
-      if (data != err) {
+      if (data !== err) {
         const cookies: any = document.cookie
           .split(';')
           .reduce((res, c) => {
@@ -158,21 +159,16 @@ export class Login extends React.Component<IUserProps, any> {
           helperText={this.state.errorPwFieldTxt} />
     );
   }
-
 }
 
-// This function will convert state-store values to
-// component properties
 const mapStateToProps = (state: IState) => {
   return {
     user: state.user
   }
 }
 
-// This object definition will be used to map action creators to
-// properties
 const mapDispatchToProps = {
-  updateUserSession: updateUserSession 
+  updateUserSession: updateUserSession
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(Login);

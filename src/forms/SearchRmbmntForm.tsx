@@ -1,5 +1,5 @@
 import React from "react";
-import { Paper, TextField, Button, IconButton, Tooltip } from '@material-ui/core';
+import { Paper, TextField, Button, Tooltip } from '@material-ui/core';
 
 export default class SearchRmbmntForm extends React.Component<any, any> {
   constructor(props: any) {
@@ -38,7 +38,6 @@ export default class SearchRmbmntForm extends React.Component<any, any> {
             }}
             id='search'
             label='Search'
-            type='number'
             value={this.state.search}
             onChange={(e: any) => this.handleChange(e)}
           />
@@ -70,7 +69,7 @@ export default class SearchRmbmntForm extends React.Component<any, any> {
   }
 
   handleChange(event: any) {
-    if (event.target.value === '' || /^\d+$/.test(event.target.value)) {
+    if (event.target.value == '' || /^\d+$/.test(event.target.value)) {
       this.setState({
         [event.target.id]: event.target.value
       });

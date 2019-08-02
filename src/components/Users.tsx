@@ -1,11 +1,17 @@
 import React from 'react';
 import MaterialTable from 'material-table';
-import { Button, Theme, makeStyles, createStyles } from '@material-ui/core';
-import RefreshCookies, { ParsePermissionCookie, ParseUserCookie, UpdateCookies, HasPermissions } from '../utils/SessionCookies';
+import { Theme, makeStyles, createStyles } from '@material-ui/core';
+import RefreshCookies, { ParseUserCookie, UpdateCookies, HasPermissions } from '../utils/SessionCookies';
 import { Redirect } from 'react-router';
 import ChangePasswordForm from '../forms/ChangePasswordForm';
+import { IScreenState, IState } from '../utils';
+import { connect } from 'react-redux';
 
-export default class Users extends React.Component<any, any> {
+interface IUsersState {
+  ui: IScreenState
+}
+
+export class Users extends React.Component<IUsersState, any> {
   classes = () => {
     makeStyles((theme: Theme) =>
       createStyles({
@@ -24,18 +30,8 @@ export default class Users extends React.Component<any, any> {
     this.state = {
       open: false,
       userId: 0,
-      columns: [
-        { title: 'ID', field: 'id', editable: 'never' },
-        { title: 'Username', field: 'username' },
-        { title: 'First', field: 'firstName' },
-        { title: 'Last', field: 'lastName' },
-        { title: 'Email', field: 'email' },
-        {
-          title: 'Role', field: 'role',
-          lookup: { 1: 'Admin', 2: 'Finance Manager', 3: 'User' },
-        },
-      ],
-      data: [],
+      tableLoading: false,
+      data: []
     }
   }
 
@@ -43,16 +39,11 @@ export default class Users extends React.Component<any, any> {
     return (
       <div>
         {RefreshCookies()}
-        <ChangePasswordForm open={this.state.open} userId={this.state.userId} />
-        {/*{this.isRole('user') ? <Redirect push to="/user" /> : !ParseUserCookie() ? <Redirect push to="/login" /> :*/}
+        <ChangePasswordForm closeParent={() => this.handleClose()} open={this.state.open} userId={this.state.userId} />
         {!ParseUserCookie() ? <Redirect push to="/login" /> :
           <div>
-            {/* <div style={{ textAlign: 'center' }}>
-              <Button style={{ marginBottom: '15px' }} variant="contained" color="inherit" onClick={() => this.getAllUsers()}>
-                Fetch Users</Button>
-            </div> */}
             <div style={{ textAlign: 'center' }}>
-              {HasPermissions('admin') ? this.getAdminTable() : HasPermissions('finance-manager') ? this.getManagerTable() : this.getUserTable()}
+              {this.getTable()}
             </div>
           </div>
         }
@@ -75,16 +66,24 @@ export default class Users extends React.Component<any, any> {
     });
   }
 
+  handleClose() {
+    this.setState({
+      open: false
+    })
+  }
+
   async getAllUsers(): Promise<any> {
+    this.setState({ tableLoading: true });
     try {
       const response = await fetch('/users', { method: 'get' });
       if (!response.ok) {
         throw Error(response.statusText);
       }
-      const result = await response.json();
-      this.setState({ ...this.state, data: result });
+      const data = await response.json();
+      this.setState({ ...this.state, data, tableLoading: false });
     } catch (err) {
       console.log(err);
+      this.setState({ tableLoading: false })
       if (err.message == 'Unauthorized') {
         alert('You do not have permission to perform that action.');
       }
@@ -92,22 +91,22 @@ export default class Users extends React.Component<any, any> {
   }
 
   async getUserById(id: number): Promise<any> {
-    console.log('in');
+    this.setState({ tableLoading: true });
     try {
       const response = await fetch(`/users/${id}`, { method: 'get' });
       if (!response.ok) {
         throw Error(response.statusText);
       }
       const result = await response.json();
-      this.setState({ data: [result] });
+      this.setState({ data: [result], tableLoading: false });
     } catch (err) {
       console.log(err);
+      this.setState({ data: [], tableLoading: false })
       alert('User not found or you do not have permission to perform that action.');
     }
   }
 
   async updateUser(newData: any, oldData: any): Promise<any> {
-    console.log('called')
     try {
       const response = await fetch(`/users`, {
         method: 'PATCH',
@@ -144,96 +143,72 @@ export default class Users extends React.Component<any, any> {
   }
 
   // Admin has action buttons, filtering, refresh
-  getAdminTable() {
+  getTable() {
     return <MaterialTable
       style={{
         display: 'inline-block',
-        maxWidth: '75%'
+        maxWidth: !this.props.ui.isLargeScreen ? '90%' : '75%'
       }}
-      actions={[
-        {
-          icon: 'security',
-          tooltip: 'Change Password',
-          onClick: (event, rowData) => this.handleClickOpen(event, rowData.id)
-        },
-        {
-          icon: 'refresh',
-          tooltip: 'Refresh',
-          isFreeAction: true,
-          onClick: HasPermissions('finance-manager') ? () => this.getAllUsers() : () => this.getUserById(ParseUserCookie().id)
-        },
-      ]}
-      // icons={{
-      //   Filter: 'refresh'
-      // }}
+      isLoading={this.state.tableLoading}
+      actions={HasPermissions('admin') ?
+        [
+          {
+            icon: 'security',
+            tooltip: 'Change Password',
+            onClick: (event, rowData) => this.handleClickOpen(event, rowData.id)
+          },
+          {
+            icon: 'refresh',
+            tooltip: 'Refresh',
+            isFreeAction: true,
+            onClick: HasPermissions('finance-manager') ? () => this.getAllUsers() : () => this.getUserById(ParseUserCookie().id)
+          },
+        ]
+        :
+        [
+          {
+            icon: 'refresh',
+            tooltip: 'Refresh',
+            isFreeAction: true,
+            onClick: HasPermissions('finance-manager') ? () => this.getAllUsers() : () => this.getUserById(ParseUserCookie().id)
+          },
+        ]
+      }
       options={{
-        filtering: true,
+        padding: this.props.ui.isLargeScreen ? "default" : "dense",
+        filtering: HasPermissions('finance-manager') ? true : false,
         search: false,
         headerStyle: {
           backgroundColor: '#f5f5f5'
         },
       }}
       title="Users"
-      columns={this.state.columns}
+      columns={[
+        {
+          title: 'ID', field: 'id', editable: 'never',
+          hidden: HasPermissions('finance-manager') ? false : true
+        },
+        { title: 'Username', field: 'username' },
+        { title: 'First', field: 'firstName' },
+        { title: 'Last', field: 'lastName' },
+        { title: 'Email', field: 'email' },
+        {
+          title: 'Role', field: 'role',
+          lookup: { 1: 'Admin', 2: 'Finance Manager', 3: 'User' },
+        },
+      ]}
       data={this.state.data}
-      editable={{
+      editable={HasPermissions('admin') ? {
         onRowUpdate: (newData, oldData) => this.updateUser(newData, oldData)
-      }}
-    />
-  }
-
-  // Manager can filter
-  getManagerTable() {
-    return <MaterialTable
-      style={{
-        display: 'inline-block',
-        maxWidth: '75%'
-      }}
-      actions={[
-        {
-          icon: 'refresh',
-          tooltip: 'Refresh',
-          isFreeAction: true,
-          onClick: HasPermissions('finance-manager') ? () => this.getAllUsers() : () => this.getUserById(ParseUserCookie().id)
-        },
-      ]}
-      options={{
-        filtering: true,
-        search: false,
-        headerStyle: {
-          backgroundColor: '#f5f5f5'
-        },
-      }}
-      title="Users"
-      columns={this.state.columns}
-      data={this.state.data}
-    />
-  }
-
-  // User has nada
-  getUserTable() {
-    return <MaterialTable
-      style={{
-        display: 'inline-block',
-        maxWidth: '75%'
-      }}
-      actions={[
-        {
-          icon: 'refresh',
-          tooltip: 'Refresh',
-          isFreeAction: true,
-          onClick: HasPermissions('finance-manager') ? () => this.getAllUsers() : () => this.getUserById(ParseUserCookie().id)
-        },
-      ]}
-      options={{
-        search: false,
-        headerStyle: {
-          backgroundColor: '#f5f5f5'
-        },
-      }}
-      title="Users"
-      columns={this.state.columns}
-      data={this.state.data}
+      } : undefined}
     />
   }
 }
+
+const mapStateToProps = (state: IState) => {
+  return {
+    ui: state.ui
+  }
+}
+
+export default connect(mapStateToProps)(Users);

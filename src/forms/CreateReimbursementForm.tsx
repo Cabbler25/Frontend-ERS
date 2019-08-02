@@ -3,7 +3,8 @@ import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import { Divider, InputAdornment, Paper } from '@material-ui/core';
 import Cookies from 'js-cookie';
-import { IsMobile } from '../utils/MobileSpecs';
+import { IScreenState, IState } from '../utils';
+import { connect } from 'react-redux';
 
 const styles = {
   paper: {
@@ -27,7 +28,13 @@ const styles = {
   }
 }
 
-export default class CreateReimbursementForm extends React.Component<any, any> {
+interface IRmbmntFormState {
+  ui: IScreenState,
+  submit: (type: number, amount: number, description: string) => void,
+  toggleForm: (val: boolean) => void
+}
+
+export class CreateReimbursementForm extends React.Component<any, any> {
   userCookie = Cookies.getJSON('user');
   constructor(props: any) {
     super(props);
@@ -45,7 +52,7 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
   render() {
     return (
       <div style={{ textAlign: 'center' }}>
-        <Paper style={IsMobile() ? styles.paper.mobile : styles.paper.desktop}>
+        <Paper style={!this.props.ui.isLargeScreen ? styles.paper.mobile : styles.paper.desktop}>
           <h2 style={{ textAlign: 'initial' }}>Create Reimbursement</h2>
           <Divider variant='fullWidth' />
           <div style={{ textAlign: 'initial', paddingTop: '15px' }}>
@@ -70,7 +77,7 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
 
   handleChange(event: any) {
     if (event.target.id == 'amount') {
-      if (event.target.value === '' || /^\d+$/.test(event.target.value)) {
+      if (event.target.value == '' || /^\d+$/.test(event.target.value)) {
         this.setState({
           [event.target.id]: event.target.value,
           errorAmountField: false,
@@ -175,7 +182,7 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
     return (
       !this.state.errorDescriptionField ?
         <TextField
-          style={IsMobile() ? styles.description.mobile : styles.description.desktop}
+          style={!this.props.ui.isLargeScreen ? styles.description.mobile : styles.description.desktop}
           id="description"
           label='Description'
           variant='outlined'
@@ -184,7 +191,7 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
         :
         <TextField
           error
-          style={IsMobile() ? styles.description.mobile : styles.description.desktop}
+          style={!this.props.ui.isLargeScreen ? styles.description.mobile : styles.description.desktop}
           id="description"
           label='Description'
           variant='outlined'
@@ -194,3 +201,11 @@ export default class CreateReimbursementForm extends React.Component<any, any> {
     );
   }
 }
+
+const mapStateToProps = (state: IState) => {
+  return {
+    ui: state.ui
+  }
+}
+
+export default connect(mapStateToProps)(CreateReimbursementForm);

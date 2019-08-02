@@ -1,43 +1,24 @@
 import React from 'react';
-import MaterialTable, { MTableToolbar } from 'material-table';
+import MaterialTable from 'material-table';
 import RefreshCookies, { ParseUserCookie, HasPermissions } from '../utils/SessionCookies';
 import { Redirect } from 'react-router';
 import SearchRmbmntForm from '../forms/SearchRmbmntForm';
 import CreateReimbursementForm from '../forms/CreateReimbursementForm';
-import { IsMobile } from '../utils/MobileSpecs';
+import { IScreenState, IState } from '../utils';
+import { connect } from 'react-redux';
+import { Paper, Divider, GridList, GridListTile, Typography } from '@material-ui/core';
 
-export default class Reimbursements extends React.Component<any, any> {
+interface IRmbmntProps {
+  ui: IScreenState
+}
+
+export class Reimbursements extends React.Component<IRmbmntProps, any> {
 
   constructor(props: any) {
     super(props);
     this.state = {
       showForm: false,
-      columns: [
-        { title: 'ID', field: 'id', editable: 'never', hidden: true },
-        { title: 'Author', field: 'author', editable: 'never' },
-        {
-          title: 'Status', field: 'status',
-          lookup: { 1: 'Pending', 2: 'Denied', 3: 'Approved' },
-        },
-        {
-          title: 'Type', field: 'type',
-          lookup: { 1: 'Lodging', 2: 'Travel', 3: 'Food', 4: 'Other' },
-        },
-        {
-          title: 'Amount', field: 'amount', type: 'currency',
-          editComponent: (props: any) => (
-            <input
-              type="numeric"
-              value={props.value}
-              onChange={e => props.onChange(e.target.value)}
-            />
-          )
-        },
-        { title: 'Description', field: 'description' },
-        { title: 'Date Submitted', field: 'dateSubmitted', editable: 'never' },
-        { title: 'Date Resolved', field: 'dateResolved', editable: 'never' },
-        { title: 'Resolver', field: 'resolver', editable: 'never' },
-      ],
+      tableLoading: false,
       data: [],
     }
   }
@@ -55,7 +36,7 @@ export default class Reimbursements extends React.Component<any, any> {
                 <SearchRmbmntForm searchAuthor={(id: any) => this.getRmbmntByAuthor(id)} searchStatus={(id: any) => this.getRmbmntByStatus(id)} />
                 : ''}
               <div style={{ textAlign: 'center' }}>
-                {HasPermissions('finance-manager') ? this.getEditableTable() : this.getUneditableTable()}
+                {this.getTable()}
               </div>
             </div>
         }
@@ -76,6 +57,7 @@ export default class Reimbursements extends React.Component<any, any> {
   }
 
   async createRmbmnt(type: number, amount: number, description: string): Promise<any> {
+    this.setState({ tableLoading: true });
     try {
       const response = await fetch('/reimbursements', {
         method: 'post',
@@ -97,39 +79,44 @@ export default class Reimbursements extends React.Component<any, any> {
     } catch (err) {
       console.log(err);
       alert('Something went wrong, please try again.');
+      this.setState({ tableLoading: false });
       return undefined;
     }
   }
 
   async getRmbmntByAuthor(id: number): Promise<any> {
+    this.setState({ tableLoading: true });
     try {
       const response = await fetch(`/reimbursements/author/userId/${id}}`, { method: 'get' });
       if (!response.ok) {
         throw Error(response.statusText);
       }
       const data = await response.json();
-      if (data) this.setState({ ...this.state, data });
+      data.tableLoading = false;
+      if (data) this.setState({ ...this.state, data, tableLoading: false });
     } catch (err) {
       console.log(err);
       this.setState({
-        data: []
+        data: [],
+        tableLoading: false
       })
     }
   }
 
   async getRmbmntByStatus(id: number): Promise<any> {
-    console.log(id);
+    this.setState({ tableLoading: true });
     try {
       const response = await fetch(`/reimbursements/status/${id}`, { method: 'get' });
       if (!response.ok) {
         throw Error(response.statusText);
       }
       const data = await response.json();
-      if (data) this.setState({ ...this.state, data });
+      if (data) this.setState({ ...this.state, data, tableLoading: false });
     } catch (err) {
       console.log(err);
       this.setState({
-        data: []
+        data: [],
+        tableLoading: false
       })
     }
   }
@@ -157,19 +144,20 @@ export default class Reimbursements extends React.Component<any, any> {
         }, 600);
       });
     } catch (err) {
-      console.log(err);
+      console.log(err == 'Unauthorized');
       alert('You do not have permission to perform that action.');
       return undefined;
     }
   }
 
-  getEditableTable() {
+  getTable() {
     return (
       <MaterialTable
         style={{
           display: 'inline-block',
-          maxWidth: IsMobile ? '90%' : '75%'
+          maxWidth: !this.props.ui.isLargeScreen ? '90%' : '80%'
         }}
+        isLoading={this.state.tableLoading}
         actions={[
           {
             icon: 'refresh',
@@ -185,51 +173,117 @@ export default class Reimbursements extends React.Component<any, any> {
           }
         ]}
         options={{
-          filtering: true,
+          pageSize: this.props.ui.isLargeScreen ? 5 : 10,
+          detailPanelType: 'single',
+          filtering: HasPermissions('finance-manager') ? true : false,
+          padding: this.props.ui.isLargeScreen ? "default" : "dense",
           search: false,
           headerStyle: {
             backgroundColor: '#f5f5f5'
           },
         }}
         title="Reimbursements"
-        columns={this.state.columns}
+        columns={[
+          { title: 'ID', field: 'id', editable: 'never', hidden: true },
+          {
+            title: 'Author', field: 'author', editable: 'never',
+            hidden: HasPermissions('finance-manager') ? false : true
+          },
+          {
+            title: 'Status', field: 'status',
+            lookup: { 1: 'Pending', 2: 'Denied', 3: 'Approved' },
+          },
+          {
+            title: 'Type', field: 'type',
+            lookup: { 1: 'Lodging', 2: 'Travel', 3: 'Food', 4: 'Other' },
+          },
+          {
+            title: 'Amount', field: 'amount', type: 'currency',
+            editComponent: (props: any) => (
+              <input
+                type="numeric"
+                value={props.value}
+                onChange={e => props.onChange(e.target.value)}
+              />
+            )
+          },
+          {
+            title: 'Description', field: 'description',
+            hidden: this.props.ui.isLargeScreen || HasPermissions('finance-manager') ? false : true
+          },
+          {
+            title: 'Submitted', field: 'dateSubmitted', editable: 'never',
+            hidden: this.props.ui.isLargeScreen || HasPermissions('finance-manager') ? false : true
+          },
+          {
+            title: 'Resolved', field: 'dateResolved', editable: 'never',
+            hidden: this.props.ui.isLargeScreen || HasPermissions('finance-manager') ? false : true
+          },
+          {
+            title: 'Resolver', field: 'resolver', editable: 'never',
+            hidden: this.props.ui.isLargeScreen || HasPermissions('finance-manager') ? false : true
+          },
+        ]}
         data={this.state.data}
-        editable={{
+        detailPanel={
+          this.props.ui.isLargeScreen ? undefined : HasPermissions('finance-manager') ? undefined : rowData => {
+            return (
+              <Paper style={{ paddingTop: '10px', paddingRight: '20px', paddingLeft: '10px', height: 'auto' }}>
+                <Typography color='textPrimary' variant="body1">
+                  Description
+                </Typography>
+                <Typography color='textSecondary' variant="caption">
+                  {rowData.description}
+                </Typography>
+                <br />
+                <Divider style={{ margin: '10px 0px 10px 0px' }} />
+                <GridList cols={3}>
+                  <GridListTile cols={1} key={1}>
+                    <Typography color='textPrimary' variant="body1">
+                      Submitted
+                    </Typography>
+                    <Typography color='textSecondary' variant="caption">
+                      {rowData.dateSubmitted}
+                    </Typography>
+                  </GridListTile>
+                  <GridListTile cols={1} key={2}>
+                    <Typography color={rowData.dateResolved == null ? 'textSecondary' : 'textPrimary'} variant="body1">
+                      Resolved
+                    </Typography>
+                    <Typography color='textSecondary' variant="caption">
+                      {rowData.dateResolved}
+                    </Typography>
+                  </GridListTile>
+                  <GridListTile cols={1} key={3}>
+                    <Typography color={rowData.resolver == null ? 'textSecondary' : 'textPrimary'} variant="body1">
+                      Resolver
+                    </Typography>
+                    <Typography color='textSecondary' variant="caption">
+                      {rowData.resolver}
+                    </Typography>
+                  </GridListTile>
+                </GridList>
+              </Paper >
+            )
+          }
+        }
+        onRowClick={
+          this.props.ui.isLargeScreen ? undefined : (event, rowData, togglePanel) => {
+            if (togglePanel) togglePanel();
+            else return;
+          }
+        }
+        editable={!HasPermissions('finance-manager') ? undefined : {
           onRowUpdate: (newData, oldData) => this.updateRmbmnt(newData, oldData)
         }} />
     )
   }
+}
 
-  getUneditableTable() {
-    return (
-      <MaterialTable
-        style={{
-          display: 'inline-block',
-          maxWidth: IsMobile ? '90%' : '75%'
-        }}
-        actions={[
-          {
-            icon: 'refresh',
-            tooltip: 'Refresh',
-            isFreeAction: true,
-            onClick: () => this.getRmbmntByAuthor(ParseUserCookie().id)
-          },
-          {
-            icon: 'add',
-            tooltip: 'Create Reimbursement',
-            isFreeAction: true,
-            onClick: () => this.setState({ showForm: true })
-          }
-        ]}
-        options={{
-          search: false,
-          headerStyle: {
-            backgroundColor: '#f5f5f5'
-          },
-        }}
-        title="Reimbursements"
-        columns={this.state.columns}
-        data={this.state.data} />
-    )
+const mapStateToProps = (state: IState) => {
+  return {
+    ui: state.ui
   }
 }
+
+export default connect(mapStateToProps)(Reimbursements);

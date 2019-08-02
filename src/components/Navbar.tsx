@@ -7,10 +7,10 @@ import { List, ListItem, Icon } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import userIco from '../assets/icons/user.png';
 import RefreshCookies from '../utils/SessionCookies';
-import { IState, IUserState } from '../utils';
+import { IState, IUserState, IScreenState } from '../utils';
 import { connect } from 'react-redux';
-import { IsMobile } from '../utils/MobileSpecs';
 import Sidebar from './Sidebar';
+import { updateScreen } from '../utils/actions';
 
 const styles = {
   rightToolbar: { marginLeft: 'auto', marginRight: '-15px' },
@@ -29,17 +29,22 @@ const styles = {
   }
 }
 
-interface INaveProps {
+interface INavProps {
   user: IUserState,
+  ui: IScreenState,
+  updateScreen: (val: boolean) => void
 }
 
-export class NavBar extends React.Component<INaveProps, any> {
+export class NavBar extends React.Component<INavProps, any> {
+  mediaQuery: any;
   constructor(props: any) {
-    super(props)
+    super(props);
+    this.mediaQuery = window.matchMedia('(min-width: 700px)');
     this.state = {
       showSidebar: false,
     }
   }
+
   render() {
     return (
       <div style={{ textAlign: 'center', }}>
@@ -47,7 +52,8 @@ export class NavBar extends React.Component<INaveProps, any> {
         <Sidebar open={this.state.showSidebar} handleClose={() => this.closeSidebar()} />
         <AppBar style={{ display: 'inline-block' }} position="static" color="default">
           <Toolbar>
-            {IsMobile() ?
+            {!this.props.ui.isLargeScreen ?
+              // Render sidebar
               <div>
                 <Button
                   style={{ maxWidth: '40px', minWidth: '40px' }}
@@ -70,14 +76,13 @@ export class NavBar extends React.Component<INaveProps, any> {
                 </Button>
               </div>
             }
-            {!IsMobile() ?
+            {this.props.ui.isLargeScreen ?
               <List>
                 <ListItem>
                   <Button color="inherit" component={Link} to="/users">Users</Button>
                   <Button color="inherit" component={Link} to="/reimbursements">Reimbursements</Button>
                 </ListItem >
               </List>
-              // Render side bar
               : ''}
             <div style={styles.rightToolbar}>
               <List>
@@ -97,29 +102,11 @@ export class NavBar extends React.Component<INaveProps, any> {
     );
   }
 
-  /* < div >
-    {console.log(this.props.user.name)}
-    <ListItem>
-      <Button color="inherit" component={Link} to="/logout">Logout</Button>
-      <Button
-        style={{
-          margin: '-5.5px 0px -5.5px 0px',
-          minWidth: '80px',
-          maxWidth: '80px',
-          minHeight: '60px',
-          maxHeight: '60px',
-          textAlign: 'center'
-        }}
-        component={Link} to="/user">
-        <figure>
-          <img style={{ marginBottom: '-10px' }} className="center" src={userIco} alt="usrico" />
-          <figcaption style={{ textTransform: "initial" }}>
-            {this.props.user.name}
-          </figcaption>
-        </figure>
-      </Button>
-    </ListItem >
-  </div>} */
+  componentDidMount() {
+    this.mediaQuery.addListener((mq: any) => {
+      this.props.updateScreen(!this.props.ui.isLargeScreen);
+    });
+  }
 
   closeSidebar() {
     this.setState({
@@ -131,7 +118,12 @@ export class NavBar extends React.Component<INaveProps, any> {
 const mapStateToProps = (state: IState) => {
   return {
     user: state.user,
+    ui: state.ui
   }
 }
 
-export default connect(mapStateToProps)(NavBar);
+const mapDispatchToProps = {
+  updateScreen: updateScreen
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(NavBar);

@@ -3,7 +3,7 @@ import { ParseUserCookie } from './SessionCookies';
 
 const initialState = {
     loggedIn: ParseUserCookie(),
-    name: ParseUserCookie ? ParseUserCookie().firstName : ''
+    name: ParseUserCookie() ? ParseUserCookie().firstName : '',
 };
 
 /**

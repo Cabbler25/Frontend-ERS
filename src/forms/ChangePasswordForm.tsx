@@ -20,8 +20,8 @@ export default class ChangePasswordForm extends React.Component<any, any> {
       errorConfirmField: false,
       password: '',
       passwordConfirm: '',
-      errorPwTxt: '',
-      errorConfirmTxt: ''
+      errorPwTxt: 'Missing field',
+      errorConfirmTxt: 'Not matching'
     }
   }
 
@@ -33,10 +33,9 @@ export default class ChangePasswordForm extends React.Component<any, any> {
           aria-labelledby="form-dialog-title">
           <DialogTitle id="form-dialog-title">Change Password</DialogTitle>
           <Divider variant='fullWidth' />
-          <div style={{ height: '25px' }}></div>
-          <DialogContent>
+          <DialogContent style={{ marginTop: '10px' }}>
             <div onKeyPress={(e: any) => {
-              if (e.key === 'Enter') {
+              if (e.key == 'Enter') {
                 this.handleSubmit(e);
               }
             }}>
@@ -82,6 +81,7 @@ export default class ChangePasswordForm extends React.Component<any, any> {
   }
 
   handleClose() {
+    this.props.closeParent();
     this.setState({
       open: false,
       errorPwField: false,
@@ -99,17 +99,17 @@ export default class ChangePasswordForm extends React.Component<any, any> {
 
   handleSubmit(event: any) {
     const data = this.state;
-    const errorPw = data.password === '';
-    const errorConfirm = data.password != data.passwordConfirm;
+    const errorPw = data.password == '';
+    const errorConfirm = data.password !== data.passwordConfirm;
     if (errorPw || errorConfirm) {
       this.setState({
         errorPwField: errorPw,
         errorConfirmField: errorConfirm
       })
     } else {
-      this.updatePassword();
+      const result = this.updatePassword();
       this.setState({
-        successPromptOpen: true,
+        successPromptOpen: result,
         errorPwField: false,
         errorConfirmField: false
       })
@@ -144,8 +144,6 @@ export default class ChangePasswordForm extends React.Component<any, any> {
           this.setState({ ...this.state, data });
         }, 600);
       });
-      // this.setState({ ...this.state, data });
-      // return data;
     } catch (err) {
       console.log(err);
       alert('Update password failed.');
